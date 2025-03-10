@@ -1,4 +1,0 @@
-project_id  = "your-project-id"
-region      = "us"
-domain_name = "example.com"
-subdomain   = "data-extractor"

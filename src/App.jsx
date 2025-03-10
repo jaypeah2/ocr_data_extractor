@@ -34,7 +34,6 @@ import {
 } from '@mui/icons-material';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import GoogleAuth from './components/GoogleAuth';
-import { authService } from './services/auth';
 
 function App() {
   const [file, setFile] = useState(null);
@@ -43,7 +42,7 @@ function App() {
   const [validatedData, setValidatedData] = useState({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [user, setUser] = useState(authService.getCurrentUser());
+  const [user, setUser] = useState(localStorage.getItem('DATA_EXTRACTOR_USER_TOKEN'));
   const [mode, setMode] = useState('dark');
   
   const prefersDarkMode = useMediaQuery('(prefers-color-scheme: dark)');
@@ -103,7 +102,7 @@ function App() {
   };
 
   const handleLogout = () => {
-    authService.logout();
+    localStorage.removeItem('DATA_EXTRACTOR_USER_TOKEN');
     setUser(null);
   };
 
@@ -132,12 +131,15 @@ function App() {
       return;
     }
 
+    const IS_LOCALHOST = window.location.hostname.includes("localhost");
+    const API_URL = IS_LOCALHOST ? 'http://localhost:9000/' : 'https://api.simplejay.com/';
+
     setLoading(true);
     try {
       const formData = new FormData();
       formData.append('file', selectedFile);
 
-      const response = await fetch('http://localhost:9000/data/ocr', {
+      const response = await fetch(`${API_URL}data/ocr`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${user}`

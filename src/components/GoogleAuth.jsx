@@ -1,15 +1,22 @@
 import React from 'react';
 import { GoogleLogin } from '@react-oauth/google';
-import { authService } from '../services/auth';
+import axios from 'axios';
 
 const GoogleAuth = ({ onSuccess, onError }) => {
+
+  const IS_LOCALHOST = window.location.hostname.includes("localhost");
+  const API_URL = IS_LOCALHOST ? 'http://localhost:9000/' : 'https://api.simplejay.com/';
+  
   const handleSuccess = async (credentialResponse) => {
     try {
-      const userData = await authService.loginWithGoogle(credentialResponse.credential);
-      onSuccess?.(userData);
+      const response = await axios.post(`${API_URL}google_login`, {
+        id_token: credentialResponse.credential
+      });
+      localStorage.setItem('DATA_EXTRACTOR_USER_TOKEN', response.data);
+      onSuccess?.(response.data);
     } catch (error) {
-      console.error('Google authentication error:', error);
       onError?.(error);
+      throw new Error(error.response?.data?.message || 'Failed to authenticate with Google');
     }
   };
 
