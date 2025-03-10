@@ -47,9 +47,7 @@ jobs:
       - name: Create TF state bucket as necessary.
         run: |
           if ! gsutil ls -b gs://tf_state_$GCS_BUCKET > /dev/null 2>&1; then
-            gsutil mb -p $PROJECT_ID -l us gs://tf_state_$GCS_BUCKET
-            gsutil web set -m index.html gs://tf_state_$GCS_BUCKET
-            gsutil iam ch allUsers:objectViewer gs://tf_state_$GCS_BUCKET
+            gsutil mb -p $TF_VAR_project_id -l us gs://tf_state_$GCS_BUCKET
           fi
 
       - name: Setup Terraform
