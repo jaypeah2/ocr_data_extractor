@@ -1,13 +1,14 @@
-name: Deploy to Google Cloud Storage
+name: Deploy to Google Cloud Storage, Google CDN via Terraform.
 
 on:
   push:
     branches:
-      - main  # or your default branch
+      - main
 
 env:
-  GCS_BUCKET: ${{ github.event.repository.name }}
-  PROJECT_ID: ${{ secrets.GOOGLE_PROJECT_ID }}
+  TF_VAR_project_id: ${{ secrets.GOOGLE_PROJECT_ID }}
+  TF_VAR_domain_name: ${{ secrets.DOMAIN_NAME }}
+  TF_VAR_subdomain: ${{ secrets.SUBDOMAIN }}
 
 jobs:
   deploy:
@@ -33,22 +34,28 @@ jobs:
       - name: Build application
         run: npm run build
 
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.5.0"
+
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
           project_id: ${{ secrets.GOOGLE_PROJECT_ID }}
           credentials_json: ${{ secrets.GOOGLE_CREDENTIALS }}
 
-      - name: Set up Cloud SDK
-        uses: google-github-actions/setup-gcloud@v2
+      - name: Terraform Init
+        run: terraform init
+        working-directory: terraform
 
-      - name: Create bucket if not exists
-        run: |
-          if ! gsutil ls -b gs://$GCS_BUCKET > /dev/null 2>&1; then
-            gsutil mb -p $PROJECT_ID -l us gs://$GCS_BUCKET
-            gsutil web set -m index.html gs://$GCS_BUCKET
-            gsutil iam ch allUsers:objectViewer gs://$GCS_BUCKET
-          fi
+      - name: Terraform Plan
+        run: terraform plan -out=tfplan
+        working-directory: terraform
 
-      - name: Upload to Google Cloud Storage
-        run: gsutil -m rsync -r dist gs://$GCS_BUCKET
+      - name: Terraform Apply
+        run: terraform apply -auto-approve tfplan
+        working-directory: terraform
+
+      - name: Upload to Cloud Storage
+        run: gsutil -m rsync -r dist gs://${{ env.TF_VAR_subdomain }}.${{ env.TF_VAR_domain_name }}

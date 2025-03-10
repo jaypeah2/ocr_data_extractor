@@ -39,3 +39,10 @@ logs
 # Cache
 .cache
 .parcel-cache
+
+# Terraform
+.terraform
+*.tfstate
+*.tfstate.*
+terraform.tfvars
+.terraform.lock.hcl

@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:9000/';
+const IS_LOCALHOST = window.location.hostname.includes("localhost");
+const API_URL = IS_LOCALHOST ? 'http://localhost:9000/' : 'https://api.simplejay.com/';
 
 export const authService = {
   async loginWithGoogle(accessToken) {
