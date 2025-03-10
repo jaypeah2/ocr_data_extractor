@@ -345,7 +345,7 @@ function App() {
                             {item.key}
                           </Typography>
                         }
-                        secondary={item.value}
+                        secondary={JSON.stringify(item.value)}
                         sx={{ mr: 2 }}
                       />
                       <ListItemSecondaryAction sx={{ display: 'flex', gap: 1 }}>
