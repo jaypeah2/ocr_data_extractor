@@ -71,3 +71,4 @@ jobs:
 
       - name: Upload to Cloud Storage
         run: gsutil -m rsync -r dist gs://$GCS_BUCKET
+        run: gcloud compute url-maps invalidate-cdn-cache ocr-url-map --path "/*"
