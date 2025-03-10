@@ -1,4 +1,4 @@
-name: Deploy to Google Cloud Storage, Google CDN via Terraform.
+name: Deploy to GCP via Terraform.
 
 on:
   push:
@@ -70,4 +70,4 @@ jobs:
         working-directory: terraform
 
       - name: Upload to Cloud Storage
-        run: gsutil -m rsync -r dist gs://${{ env.TF_VAR_subdomain }}.${{ env.TF_VAR_domain_name }}
+        run: gsutil -m rsync -r dist gs://$GCS_BUCKET
