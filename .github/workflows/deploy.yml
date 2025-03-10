@@ -6,6 +6,7 @@ on:
       - main
 
 env:
+  GCS_BUCKET: ${{ github.event.repository.name }}
   TF_VAR_project_id: ${{ secrets.GOOGLE_PROJECT_ID }}
   TF_VAR_domain_name: ${{ secrets.DOMAIN_NAME }}
   TF_VAR_subdomain: ${{ secrets.SUBDOMAIN }}
@@ -34,16 +35,27 @@ jobs:
       - name: Build application
         run: npm run build
 
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: "1.5.0"
-
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
           project_id: ${{ secrets.GOOGLE_PROJECT_ID }}
           credentials_json: ${{ secrets.GOOGLE_CREDENTIALS }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Create TF state bucket as necessary.
+        run: |
+          if ! gsutil ls -b gs://tf_state_$GCS_BUCKET > /dev/null 2>&1; then
+            gsutil mb -p $PROJECT_ID -l us gs://tf_state_$GCS_BUCKET
+            gsutil web set -m index.html gs://tf_state_$GCS_BUCKET
+            gsutil iam ch allUsers:objectViewer gs://tf_state_$GCS_BUCKET
+          fi
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.5.0"
 
       - name: Terraform Init
         run: terraform init
