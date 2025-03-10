@@ -7,6 +7,7 @@ on:
 
 env:
   GCS_BUCKET: ${{ github.event.repository.name }}
+  TF_VAR_bucket_name: ${{ github.event.repository.name }}
   TF_VAR_project_id: ${{ secrets.GOOGLE_PROJECT_ID }}
   TF_VAR_domain_name: ${{ secrets.DOMAIN_NAME }}
   TF_VAR_subdomain: ${{ secrets.SUBDOMAIN }}
