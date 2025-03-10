@@ -107,6 +107,6 @@ resource "google_dns_record_set" "website" {
   name         = "${var.subdomain}.${var.domain_name}."
   type         = "A"
   ttl          = 300
-  managed_zone = replace(var.domain_name, ".", "-")
+  managed_zone = replace(var.domain_name, ".com", "")
   rrdatas      = [google_compute_global_address.website.address]
 }
