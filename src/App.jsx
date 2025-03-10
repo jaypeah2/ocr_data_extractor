@@ -171,7 +171,7 @@ function App() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <GoogleOAuthProvider clientId={"480153443249-pukf3sntahu0e3jhu1qk082086q50tp0.apps.googleusercontent.com"}>
+      <GoogleOAuthProvider clientId={process.env.VITE_GOOGLE_CLIENT_ID}>
         <Container maxWidth="md" sx={{ py: 4, minHeight: '100vh' }}>
           <Paper elevation={3} sx={{ p: 3 }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
@@ -276,7 +276,6 @@ function App() {
                             alt="Document Preview"
                             style={{
                               width: '100%',
-                              maxHeight: '70vh',
                               objectFit: 'contain'
                             }}
                           />

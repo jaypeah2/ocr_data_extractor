@@ -10,6 +10,7 @@ env:
   TF_VAR_project_id: ${{ secrets.GOOGLE_PROJECT_ID }}
   TF_VAR_domain_name: ${{ secrets.DOMAIN_NAME }}
   TF_VAR_subdomain: ${{ secrets.SUBDOMAIN }}
+  VITE_GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
 
 jobs:
   deploy:
