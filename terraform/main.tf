@@ -28,6 +28,11 @@ variable "subdomain" {
   type        = string
 }
 
+variable "bucket_name" {
+  description = "Bucket name for static website hosting"
+  type        = string
+}
+
 provider "google" {
   project = var.project_id
   region  = var.region
@@ -35,7 +40,7 @@ provider "google" {
 
 # Create GCS bucket for static website hosting
 resource "google_storage_bucket" "website" {
-  name          = "${var.subdomain}.${var.domain_name}"
+  name          = "${var.bucket_name}"
   location      = "US"
   force_destroy = true
 
