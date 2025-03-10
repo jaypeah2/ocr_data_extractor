@@ -35,7 +35,7 @@ provider "google" {
 
 # Create GCS bucket for static website hosting
 resource "google_storage_bucket" "website" {
-  name          = "${var.fqdn}.${var.domain_name}"
+  name          = "${var.subdomain}.${var.domain_name}"
   location      = "US"
   force_destroy = true
 
