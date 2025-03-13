@@ -7,11 +7,12 @@ on:
 
 env:
   GCS_BUCKET: ${{ github.event.repository.name }}
+  TF_VAR_domain_name: simplejay.com
+  TF_VAR_subdomain: ocr
   TF_VAR_bucket_name: ${{ github.event.repository.name }}
+  TF_VAR_hosted_zone: simplejay
+  TF_VAR_global_address: ${{ secrets.GLOBAL_ADDRESS }}
   TF_VAR_project_id: ${{ secrets.GOOGLE_PROJECT_ID }}
-  TF_VAR_domain_name: ${{ secrets.DOMAIN_NAME }}
-  TF_VAR_subdomain: ${{ secrets.SUBDOMAIN }}
-  VITE_GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
 
 jobs:
   deploy:
@@ -24,6 +25,12 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        
+      - name: Set environment variable based on branch
+        run: |
+          if [ "${{ github.ref_name }}" != "main" ]; then
+            echo "TF_VAR_subdomain=admin-${{ github.ref_name }}"
+          fi
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -69,7 +76,11 @@ jobs:
         run: terraform apply -auto-approve tfplan
         working-directory: terraform
 
+      - name: Terraform Output
+        run: terraform output -raw backend-link
+        working-directory: terraform
+
       - name: Upload to Cloud Storage
         run: |
           gsutil -m rsync -r dist gs://$GCS_BUCKET
-          gcloud compute url-maps invalidate-cdn-cache ocr-url-map --path "/*"
+          gcloud compute url-maps invalidate-cdn-cache default-url-map --host=$TF_VAR_subdomain.$TF_VAR_domain_name --path "/*"

@@ -5,17 +5,10 @@ terraform {
       version = "~> 4.0"
     }
   }
-}
 
-variable "project_id" {
-  description = "Google Cloud Project ID"
-  type        = string
-}
-
-variable "region" {
-  description = "Default region for resources"
-  type        = string 
-  default     = "us-central1"
+  backend "gcs" {
+    prefix = "terraform/state"
+  }
 }
 
 variable "domain_name" {
@@ -29,8 +22,26 @@ variable "subdomain" {
 }
 
 variable "bucket_name" {
-  description = "Bucket name for static website hosting"
   type        = string
+}
+
+variable "hosted_zone" {
+  type        = string
+}
+
+variable "global_address" {
+  type        = string
+}
+
+variable "project_id" {
+  description = "Google Cloud Project ID"
+  type        = string
+}
+
+variable "region" {
+  description = "Default region for resources"
+  type        = string 
+  default     = "us-central1"
 }
 
 provider "google" {
@@ -39,7 +50,7 @@ provider "google" {
 }
 
 # Create GCS bucket for static website hosting
-resource "google_storage_bucket" "website" {
+resource "google_storage_bucket" "static-public-bucket" {
   name          = "${var.bucket_name}"
   location      = "US"
   force_destroy = true
@@ -60,58 +71,28 @@ resource "google_storage_bucket" "website" {
 }
 
 # Make bucket public
-resource "google_storage_bucket_iam_member" "public_read" {
-  bucket = google_storage_bucket.website.name
+resource "google_storage_bucket_iam_member" "static-public-bucket-public-read" {
+  bucket = google_storage_bucket.static-public-bucket.name
   role   = "roles/storage.objectViewer"
   member = "allUsers"
 }
 
 # Create Cloud CDN backend bucket
-resource "google_compute_backend_bucket" "website" {
-  name        = "${var.subdomain}-backend"
-  bucket_name = google_storage_bucket.website.name
+resource "google_compute_backend_bucket" "static-public-bucket-backend" {
+  name        = replace("${var.bucket_name}-backend", "_", "-")
+  bucket_name = google_storage_bucket.static-public-bucket.name
   enable_cdn  = true
 }
 
-# Reserve global IP address
-resource "google_compute_global_address" "website" {
-  name = "${var.subdomain}-ip"
-}
-
-# Create HTTPS certificate
-resource "google_compute_managed_ssl_certificate" "website" {
-  name = "${var.subdomain}-cert"
-  managed {
-    domains = ["${var.subdomain}.${var.domain_name}"]
-  }
-}
-
-# Create URL map
-resource "google_compute_url_map" "website" {
-  name            = "${var.subdomain}-url-map"
-  default_service = google_compute_backend_bucket.website.self_link
-}
-
-# Create HTTPS proxy
-resource "google_compute_target_https_proxy" "website" {
-  name             = "${var.subdomain}-https-proxy"
-  url_map          = google_compute_url_map.website.self_link
-  ssl_certificates = [google_compute_managed_ssl_certificate.website.self_link]
-}
-
-# Create forwarding rule
-resource "google_compute_global_forwarding_rule" "website" {
-  name       = "${var.subdomain}-forwarding-rule"
-  target     = google_compute_target_https_proxy.website.self_link
-  port_range = "443"
-  ip_address = google_compute_global_address.website.address
-}
-
 # Create DNS record
-resource "google_dns_record_set" "website" {
+resource "google_dns_record_set" "static-public-bucket-dns-record" {
   name         = "${var.subdomain}.${var.domain_name}."
   type         = "A"
   ttl          = 300
-  managed_zone = replace(var.domain_name, ".com", "")
-  rrdatas      = [google_compute_global_address.website.address]
+  managed_zone = var.hosted_zone
+  rrdatas      = [var.global_address]
+}
+
+output "backend-link" {
+  value = google_compute_backend_bucket.static-public-bucket-backend.self_link
 }
