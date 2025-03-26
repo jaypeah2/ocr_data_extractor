@@ -13,6 +13,7 @@ env:
   TF_VAR_hosted_zone: simplejay
   TF_VAR_global_address: ${{ secrets.GLOBAL_ADDRESS }}
   TF_VAR_project_id: ${{ secrets.GOOGLE_PROJECT_ID }}
+  VITE_GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID}}
 
 jobs:
   deploy:
