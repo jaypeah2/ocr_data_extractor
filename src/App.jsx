@@ -114,7 +114,8 @@ function App() {
       setFileUrl(null);
       return;
     }
-
+    setError(null);
+    setExtractedData([]);
     setFile(selectedFile);
     setFileUrl(URL.createObjectURL(selectedFile));
     handleProcessDocument(selectedFile);
@@ -147,24 +148,61 @@ function App() {
         body: formData
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      // Try to get the response body text first, useful for both success and error
+      const responseText = await response.text();
+      let responseData = null;
+
+      // If the response is OK, try to parse the text as JSON
+      if (response.ok) {
+        try {
+          // Handle potentially empty successful responses
+          responseData = responseText ? JSON.parse(responseText) : null;
+        } catch (jsonError) {
+          console.error('Failed to parse successful response JSON:', jsonError, 'Response Text:', responseText);
+          // Decide how to handle: maybe throw error, maybe set empty data
+          throw new Error('Received successful response, but failed to parse JSON body.');
+        }
+        
+        // Process successful data
+        if (responseData) {
+            const transformedData = Object.entries(responseData).map(([key, value]) => ({
+                key,
+                value,
+                validation: 'unvalidated'
+            }));
+            setExtractedData(transformedData);
+            setValidatedData({});
+        } else {
+            // Handle empty successful response if needed
+            console.warn("Received OK response but no JSON data.");
+            setExtractedData([]);
+            setValidatedData({});
+        }
+
+      } else {
+        // If response is not OK, try to parse the text as JSON for error details
+        let errorDetails = null;
+        try {
+          errorDetails = responseText ? JSON.parse(responseText) : null;
+        } catch (jsonError) {
+          // JSON parsing failed, use the raw text as the error detail if available
+          errorDetails = responseText || `Status code ${response.status} with no body`;
+        }
+
+        // Construct error message
+        const errorMessage = errorDetails?.message // Try common 'message' field in JSON error
+                            || errorDetails?.detail // Try common 'error' field in JSON error
+                           || (typeof errorDetails === 'string' ? errorDetails : JSON.stringify(errorDetails)) // Use text/stringified JSON
+                           || `HTTP error! status: ${response.status}`; // Fallback
+        throw new Error(errorMessage);
       }
-
-      const data = await response.json();
-      
-      const transformedData = Object.entries(data).map(([key, value]) => ({
-        key,
-        value,
-        validation: 'unvalidated'
-      }));
-
-      setExtractedData(transformedData);
-      setValidatedData({});
       
     } catch (err) {
+      // Log the raw error object for debugging
       console.error('Error processing document:', err);
-      setError('Error processing document. Please try again.');
+      // Use the error message thrown, which should be more detailed now
+      const displayError = err?.message || String(err) || 'An unknown error occurred.';
+      setError(displayError);
     } finally {
       setLoading(false);
     }
