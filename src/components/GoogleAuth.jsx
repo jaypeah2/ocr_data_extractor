@@ -15,8 +15,9 @@ const GoogleAuth = ({ onSuccess, onError }) => {
       localStorage.setItem('DATA_EXTRACTOR_USER_TOKEN', response.data);
       onSuccess?.(response.data);
     } catch (error) {
+      // Surface the error to the parent; rethrowing here would become an
+      // unhandled promise rejection in the GoogleLogin callback.
       onError?.(error);
-      throw new Error(error.response?.data?.message || 'Failed to authenticate with Google');
     }
   };
 

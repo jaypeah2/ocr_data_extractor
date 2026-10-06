@@ -4,7 +4,7 @@ A React application that provides a clean interface for uploading and processing
 
 ## Prerequisites
 
-- Node.js (v14 or higher)
+- Node.js (v18 or higher)
 - npm (Node Package Manager)
 - Google Cloud Platform account (for deployment)
 - GitHub account (for deployment)
@@ -16,12 +16,14 @@ A React application that provides a clean interface for uploading and processing
 npm install
 ```
 
-2. Start the development server:
+2. Configure the environment: copy `.env.example` to `.env` and set `VITE_GOOGLE_CLIENT_ID` to your Google OAuth client ID.
+
+3. Start the development server:
 ```bash
 npm run dev
 ```
 
-The application will be available at http://localhost:3000
+The application will be available at http://localhost:3001
 
 ## Features
 
@@ -29,7 +31,6 @@ The application will be available at http://localhost:3000
 - Google OAuth authentication
 - PDF and PNG file upload with preview
 - Dark/Light theme with system preference detection
-- Interactive validation interface for extracted data
 - Clean, organized display of results
 
 ## Authentication
@@ -46,15 +47,15 @@ The application is configured to deploy to Google Cloud Storage using GitHub Act
 ### Prerequisites for Deployment
 
 1. Create a Google Cloud Project and set up the following:
-   - Enable Cloud Storage API
-   - Create a service account with Storage Admin permissions
-   - Set up Workload Identity Federation for GitHub Actions
+   - Enable the Cloud Storage and Compute APIs
+   - Create a service account with Storage Admin permissions and add its key JSON as a GitHub secret
 
 2. Add the following secrets to your GitHub repository:
    ```
-   GCP_PROJECT_ID          # Your Google Cloud Project ID
-   GCS_BUCKET_NAME        # Desired bucket name for deployment
-   GCP_SERVICE_ACCOUNT    # Service account email
+   GOOGLE_PROJECT_ID     # Your Google Cloud Project ID
+   GOOGLE_CREDENTIALS    # Service account key JSON (used to authenticate GitHub Actions)
+   GOOGLE_CLIENT_ID      # Google OAuth client ID, exposed to the app as VITE_GOOGLE_CLIENT_ID
+   GLOBAL_ADDRESS        # Global IP address for the Cloud CDN A record
    ```
 
 ### Deployment Process
@@ -79,12 +80,9 @@ The `App.jsx` component handles:
 - Authentication flow
 - File upload and preview
 - Theme management
-- Data validation interface
 
 ## Usage
 
 1. Sign in using your Google account
 2. Upload a PDF or PNG file
 3. View the file preview and extracted data
-4. Validate each extracted item using the check/X buttons
-5. Submit validated data when ready

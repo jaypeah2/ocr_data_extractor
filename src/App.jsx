@@ -13,8 +13,6 @@ import {
   Card,
   CardContent,
   Divider,
-  IconButton,
-  ListItemSecondaryAction,
   ThemeProvider,
   createTheme,
   CssBaseline,
@@ -25,10 +23,6 @@ import {
   Upload as UploadIcon,
   Description as DocumentIcon,
   Login as LoginIcon,
-  Close as CloseIcon,
-  Save as SaveIcon,
-  CheckCircle as CheckIcon,
-  Cancel as XIcon,
   Brightness4 as DarkIcon,
   Brightness7 as LightIcon
 } from '@mui/icons-material';
@@ -39,7 +33,6 @@ function App() {
   const [file, setFile] = useState(null);
   const [fileUrl, setFileUrl] = useState(null);
   const [extractedData, setExtractedData] = useState([]);
-  const [validatedData, setValidatedData] = useState({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [user, setUser] = useState(localStorage.getItem('DATA_EXTRACTOR_USER_TOKEN'));
@@ -93,7 +86,6 @@ function App() {
   const handleAuthSuccess = (userData) => {
     setUser(userData);
     setError(null);
-    console.log('User logged in:', userData);
   };
 
   const handleAuthError = (error) => {
@@ -167,18 +159,20 @@ function App() {
         if (responseData) {
             const transformedData = Object.entries(responseData).map(([key, value]) => ({
                 key,
-                value,
-                validation: 'unvalidated'
+                value
             }));
             setExtractedData(transformedData);
-            setValidatedData({});
         } else {
             // Handle empty successful response if needed
             console.warn("Received OK response but no JSON data.");
             setExtractedData([]);
-            setValidatedData({});
         }
 
+      } else if (response.status === 401) {
+        // Token expired or invalid — clear it and prompt re-auth.
+        localStorage.removeItem('DATA_EXTRACTOR_USER_TOKEN');
+        setUser(null);
+        throw new Error('Your session has expired. Please sign in again.');
       } else {
         // If response is not OK, try to parse the text as JSON for error details
         let errorDetails = null;
@@ -341,41 +335,16 @@ function App() {
 
             {extractedData.length > 0 && (
               <Box sx={{ mt: 3 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                  <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    Extracted Content:
-                  </Typography>
-                  <Button
-                    variant="contained"
-                    disabled={true}
-                    startIcon={<SaveIcon />}
-                    onClick={() => {
-                      const validItems = extractedData
-                        .filter(item => item.validation === 'valid')
-                        .reduce((acc, item) => ({
-                          ...acc,
-                          [item.key]: item.value
-                        }), {});
-                      console.log('Submitting validated data:', validItems);
-                      // TODO: Add API call to submit validated data
-                    }}
-                  >
-                    Submit Data
-                  </Button>
-                </Box>
+                <Typography variant="h6" sx={{ mb: 2 }}>
+                  Extracted Content:
+                </Typography>
                 <Divider sx={{ mb: 2 }} />
                 <List>
                   {extractedData.map((item, index) => (
-                    <ListItem 
+                    <ListItem
                       key={index}
                       divider
-                      sx={{
-                        bgcolor: item.validation === 'valid' ? 'rgba(76, 175, 80, 0.08)' : 
-                               item.validation === 'invalid' ? 'rgba(244, 67, 54, 0.08)' : 
-                               'inherit',
-                        transition: 'background-color 0.2s',
-                        py: 2
-                      }}
+                      sx={{ py: 2 }}
                     >
                       <ListItemText
                         primary={
@@ -384,50 +353,7 @@ function App() {
                           </Typography>
                         }
                         secondary={JSON.stringify(item.value)}
-                        sx={{ mr: 2 }}
                       />
-                      <ListItemSecondaryAction sx={{ display: 'flex', gap: 1 }}>
-                        <IconButton
-                          onClick={() => {
-                            const newData = [...extractedData];
-                            newData[index] = {
-                              ...newData[index],
-                              validation: item.validation === 'valid' ? 'unvalidated' : 'valid'
-                            };
-                            setExtractedData(newData);
-                          }}
-                          sx={{
-                            color: item.validation === 'valid' ? 'success.main' : 'action.disabled',
-                            '&:hover': {
-                              color: 'success.main',
-                              bgcolor: 'success.lighter'
-                            },
-                            padding: 1.5
-                          }}
-                        >
-                          <CheckIcon sx={{ fontSize: 28 }} />
-                        </IconButton>
-                        <IconButton
-                          onClick={() => {
-                            const newData = [...extractedData];
-                            newData[index] = {
-                              ...newData[index],
-                              validation: item.validation === 'invalid' ? 'unvalidated' : 'invalid'
-                            };
-                            setExtractedData(newData);
-                          }}
-                          sx={{
-                            color: item.validation === 'invalid' ? 'error.main' : 'action.disabled',
-                            '&:hover': {
-                              color: 'error.main',
-                              bgcolor: 'error.lighter'
-                            },
-                            padding: 1.5
-                          }}
-                        >
-                          <XIcon sx={{ fontSize: 28 }} />
-                        </IconButton>
-                      </ListItemSecondaryAction>
                     </ListItem>
                   ))}
                 </List>
