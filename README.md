@@ -23,7 +23,9 @@ npm install
 npm run dev
 ```
 
-The application will be available at http://localhost:3001
+The application will be available at http://localhost:3001. Opening it through
+`localhost`, `*.localhost`, `127.0.0.1`, or `[::1]` selects the local API at
+`http://localhost:9000` for both sign-in and document processing.
 
 ## Features
 

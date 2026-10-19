@@ -124,7 +124,7 @@ function App() {
       return;
     }
 
-    const IS_LOCALHOST = window.location.hostname.includes("localhost");
+    const IS_LOCALHOST = ["localhost", "127.0.0.1", "[::1]"].includes(window.location.hostname) || window.location.hostname.endsWith(".localhost");
     const API_URL = IS_LOCALHOST ? 'http://localhost:9000/' : 'https://api.simplejay.com/';
 
     setLoading(true);
