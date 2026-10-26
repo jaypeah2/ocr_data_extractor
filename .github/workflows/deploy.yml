@@ -43,15 +43,16 @@ jobs:
         uses: google-github-actions/auth@v2
         with:
           project_id: ${{ secrets.GOOGLE_PROJECT_ID }}
-          credentials_json: ${{ secrets.GOOGLE_CREDENTIALS }}
+          workload_identity_provider: projects/480153443249/locations/global/workloadIdentityPools/github/providers/github
+          service_account: simplejay-sa@lucid-volt-215117.iam.gserviceaccount.com
 
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
 
       - name: Create TF state bucket as necessary.
         run: |
-          if ! gsutil ls -b gs://tf_state_$GCS_BUCKET > /dev/null 2>&1; then
-            gsutil mb -p $TF_VAR_project_id -l us gs://tf_state_$GCS_BUCKET
+          if ! gcloud storage buckets describe gs://tf_state_$GCS_BUCKET > /dev/null 2>&1; then
+            gcloud storage buckets create gs://tf_state_$GCS_BUCKET --project $TF_VAR_project_id --location us
           fi
 
       - name: Setup Terraform
@@ -77,5 +78,5 @@ jobs:
 
       - name: Upload to Cloud Storage
         run: |
-          gsutil -m rsync -r dist gs://$GCS_BUCKET
+          gcloud storage rsync --recursive dist gs://$GCS_BUCKET
           gcloud compute url-maps invalidate-cdn-cache default-url-map --host=$TF_VAR_subdomain.$TF_VAR_domain_name --path "/*"
