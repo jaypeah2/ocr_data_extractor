@@ -5,6 +5,10 @@ on:
     branches:
       - main
 
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
 env:
   GCS_BUCKET: ${{ github.event.repository.name }}
   TF_VAR_domain_name: simplejay.com
@@ -44,16 +48,10 @@ jobs:
         with:
           project_id: ${{ secrets.GOOGLE_PROJECT_ID }}
           workload_identity_provider: projects/480153443249/locations/global/workloadIdentityPools/github/providers/github
-          service_account: simplejay-sa@lucid-volt-215117.iam.gserviceaccount.com
+          service_account: ci-ocr-extractor@lucid-volt-215117.iam.gserviceaccount.com
 
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
-
-      - name: Create TF state bucket as necessary.
-        run: |
-          if ! gcloud storage buckets describe gs://tf_state_$GCS_BUCKET > /dev/null 2>&1; then
-            gcloud storage buckets create gs://tf_state_$GCS_BUCKET --project $TF_VAR_project_id --location us
-          fi
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
