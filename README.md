@@ -4,10 +4,7 @@ A React application that provides a clean interface for uploading and processing
 
 ## Prerequisites
 
-- Node.js (v18 or higher)
-- npm (Node Package Manager)
-- Google Cloud Platform account (for deployment)
-- GitHub account (for deployment)
+- Node.js 18 or newer, with npm
 
 ## Setup
 
@@ -29,62 +26,34 @@ The application will be available at http://localhost:3001. Opening it through
 
 ## Features
 
-- Modern, responsive UI built with Material-UI
-- Google OAuth authentication
-- PDF and PNG file upload with preview
-- Dark/Light theme with system preference detection
-- Clean, organized display of results
+- PDF and PNG upload with preview
+- Google sign-in; the API token is kept in `localStorage` until sign-out or a rejected request
+- Dark/light theme following the system preference
+- Extracted data displayed beside the preview
 
-## Authentication
-
-The application uses Google OAuth for authentication:
-- Users must sign in to upload and process documents
-- Authentication state persists across sessions
-- Secure token management for API requests
+`src/App.jsx` handles upload, preview, results and theme; `src/components/GoogleAuth.jsx`
+exchanges the Google credential for an API token. Outside localhost the app uses
+`https://api.simplejay.com/`.
 
 ## Deployment
 
-The application is configured to deploy to Google Cloud Storage using GitHub Actions.
+Every push to `main` runs [the workflow](.github/workflows/deploy.yml), so treat it as a
+production deployment. It:
 
-### Prerequisites for Deployment
+1. Builds with Node 18 (`npm ci`, `npm run build`), injecting `VITE_GOOGLE_CLIENT_ID`.
+2. Uses the Terraform state bucket `tf_state_<repository-name>` provisioned by global_infra.
+3. Runs Terraform in `terraform/` to manage the public site bucket, its backend bucket and
+   the `ocr.simplejay.com` DNS record.
+4. Uploads `dist/` with `gcloud storage rsync` (no deletion) and invalidates the CDN cache.
 
-1. Create a Google Cloud Project and set up the following:
-   - Enable the Cloud Storage and Compute APIs
-   - Create a service account with Storage Admin permissions and add its key JSON as a GitHub secret
+HTTPS routing to the backend bucket is managed separately in `../global_infra`.
 
-2. Add the following secrets to your GitHub repository:
-   ```
-   GOOGLE_PROJECT_ID     # Your Google Cloud Project ID
-   GOOGLE_CREDENTIALS    # Service account key JSON (used to authenticate GitHub Actions)
-   GOOGLE_CLIENT_ID      # Google OAuth client ID, exposed to the app as VITE_GOOGLE_CLIENT_ID
-   GLOBAL_ADDRESS        # Global IP address for the Cloud CDN A record
-   ```
+The workflow uses keyless federation as `ci-ocr-extractor`; bootstrap its grants through
+[global_infra](../global_infra/README.md#deployment) before publishing this workflow change.
+Required GitHub secrets:
 
-### Deployment Process
-
-The GitHub Actions workflow will:
-1. Build the application
-2. Create a Cloud Storage bucket if it doesn't exist
-3. Configure the bucket for web hosting
-4. Upload the built files to the bucket
-
-The deployment is triggered automatically on pushes to the main branch.
-
-## Development
-
-The application is built with:
-- React for the UI framework
-- Material-UI for components and styling
-- Vite for build tooling and development server
-- @react-oauth/google for authentication
-
-The `App.jsx` component handles:
-- Authentication flow
-- File upload and preview
-- Theme management
-
-## Usage
-
-1. Sign in using your Google account
-2. Upload a PDF or PNG file
-3. View the file preview and extracted data
+```
+GOOGLE_PROJECT_ID     # Google Cloud project ID
+GOOGLE_CLIENT_ID      # Google OAuth client ID, exposed to the app as VITE_GOOGLE_CLIENT_ID
+GLOBAL_ADDRESS        # Global IP address for the DNS A record
+```
